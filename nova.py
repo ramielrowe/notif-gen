@@ -96,12 +96,12 @@ class Instance(object):
         self.deleted_at = ''
         self.busy = False
 
-    def to_notification(self, event_type, request_id):
+    def to_notification(self, cur_time, event_type, request_id):
         notif = deepcopy(BASE_NOTIFICATION)
         notif['message_id'] = uuid4()
 
         notif['event_type'] = event_type
-
+        notif['_context_timestamp'] = str(cur_time)
         notif['_context_request_id'] = request_id
 
         notif['_context_project_id'] = self.tenant
@@ -170,13 +170,15 @@ class CreateAction(InstanceAction):
     def _create_start(self, cur_time):
         self.instance = Instance(self.instance_uuid, self.instance_tenant,
                                  cur_time)
-        notif = self.instance.to_notification('compute.instance.create.start',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.create.start',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _create_end(self, cur_time):
         self.instance.launched_at = cur_time
-        notif = self.instance.to_notification('compute.instance.create.end',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.create.end',
                                               self.request_id)
         self.notifier.notify(notif)
 
@@ -192,13 +194,15 @@ class RebuildAction(InstanceAction):
         ]
 
     def _rebuild_start(self, cur_time):
-        notif = self.instance.to_notification('compute.instance.rebuild.start',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.rebuild.start',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _rebuild_end(self, cur_time):
         self.instance.launched_at = cur_time
-        notif = self.instance.to_notification('compute.instance.rebuild.end',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.rebuild.end',
                                               self.request_id)
         self.notifier.notify(notif)
 
@@ -219,36 +223,42 @@ class ResizeAction(InstanceAction):
         ]
 
     def _resize_prep_start(self, cur_time):
-        notif = self.instance.to_notification('compute.instance.resize.prep.start',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.resize.prep.start',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _resize_prep_end(self, cur_time):
         self.instance.new_type_id = self.type_id
-        notif = self.instance.to_notification('compute.instance.resize.prep.end',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.resize.prep.end',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _resize_start(self, cur_time):
         self.instance.new_type_id = None
-        notif = self.instance.to_notification('compute.instance.resize.start',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.resize.start',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _resize_end(self, cur_time):
-        notif = self.instance.to_notification('compute.instance.resize.end',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.resize.end',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _resize_finish_start(self, cur_time):
         self.instance.type_id = self.type_id
-        notif = self.instance.to_notification('compute.instance.finish_resize.start',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.finish_resize.start',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _resize_finish_end(self, cur_time):
         self.instance.launched_at = cur_time
-        notif = self.instance.to_notification('compute.instance.finish_resize.end',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.finish_resize.end',
                                               self.request_id)
         self.notifier.notify(notif)
 
@@ -266,23 +276,27 @@ class DeleteAction(InstanceAction):
         ]
 
     def _delete_start(self, cur_time):
-        notif = self.instance.to_notification('compute.instance.delete.start',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.delete.start',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _shutdown_start(self, cur_time):
-        notif = self.instance.to_notification('compute.instance.shutdown.start',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.shutdown.start',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _shutdown_end(self, cur_time):
-        notif = self.instance.to_notification('compute.instance.shutdown.end',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.shutdown.end',
                                               self.request_id)
         self.notifier.notify(notif)
 
     def _delete_end(self, cur_time):
         self.instance.deleted_at = cur_time
-        notif = self.instance.to_notification('compute.instance.delete.end',
+        notif = self.instance.to_notification(cur_time,
+                                              'compute.instance.delete.end',
                                               self.request_id)
         self.notifier.notify(notif)
 
@@ -315,7 +329,9 @@ class Compute(object):
         if not end:
             end = self.audit_period_end
 
-        notif = instance.to_notification('compute.instance.exists', uuid4())
+        notif = instance.to_notification(self.cur_time,
+                                         'compute.instance.exists',
+                                         uuid4())
         payload = notif['payload']
         payload['audit_period_beginning'] = str(self.audit_period_start)
         payload['audit_period_ending'] = str(end)
