@@ -304,12 +304,18 @@ RANDOM_ACTIONS = [RebuildAction, ResizeAction]
 
 
 class Compute(object):
-    def __init__(self, start_time, tick_length, sleep_time):
-        self.notifier = notifications.MySQLNotifier()
+    def __init__(self, start_time, tick_length, sleep_time,
+                 initial_tenants=0,
+                 initial_instances=0,
+                 active_actions_target=10):
+        self.notifier = notifications.PrintNotifier()
         self.start_time = start_time
         self.cur_time = start_time
         self.sleep_time = sleep_time
         self.tick_length = tick_length
+        self.initial_tenants = initial_tenants
+        self.initial_instances = initial_instances
+        self.active_actions_target = active_actions_target
         self.tenants = [uuid4(), ]
         self.instances = []
         self.deleted_instances = []
@@ -320,6 +326,21 @@ class Compute(object):
                                                     day=start_time.day)
         self.audit_period_end = self.audit_period_start + \
                                 datetime.timedelta(days=1)
+
+        self._init_tenants()
+        self._init_instances()
+
+    def _init_tenants(self):
+        for i in range(0, self.initial_tenants):
+            self.tenants.append(uuid4())
+
+    def _init_instances(self):
+        if not self.tenants:
+            self.tenants.append(uuid4())
+
+        for i in range(0, self.initial_tenants):
+            tenant = random.choice(self.tenants)
+            self.actions.append(self._action(CreateAction, tenant))
 
     def _action(self, klass, *args, **kwargs):
         return klass(self.notifier, self.cur_time,
@@ -345,6 +366,39 @@ class Compute(object):
         self.deleted_instances[:] = \
             [x for x in self.deleted_instances if keep(x)]
 
+    def _do_create(self):
+        tenant = random.choice(self.tenants)
+        self.actions.append(self._action(CreateAction, tenant))
+
+    def _do_random_action(self, free_instances):
+        instance = random.choice(free_instances)
+        instance.busy = True
+        action = random.choice(RANDOM_ACTIONS)
+        free_instances.remove(instance)
+        self._send_exists(instance, end=self.cur_time)
+        self.actions.append(self._action(action, instance))
+
+    def _do_delete(self, free_instances):
+        instance = random.choice(free_instances)
+        instance.busy = True
+        free_instances.remove(instance)
+        self.actions.append(self._action(DeleteAction, instance))
+
+    def _do_actions(self, free_instances):
+        if len(self.actions) < self.active_actions_target:
+            while len(self.actions) < self.active_actions_target:
+                if len(free_instances) != 0:
+                    a = random.randrange(0, 100)
+
+                    if 0 <= a < 25:
+                        self._do_create()
+                    elif 25 <= a < 90:
+                        self._do_random_action(free_instances)
+                    elif 90 <= a < 100:
+                        self._do_delete(free_instances)
+                else:
+                    break
+
     def run(self):
         self.running = True
         while self.running:
@@ -366,30 +420,8 @@ class Compute(object):
                 # Add New Tenant?
                 self.tenants.append(uuid4())
 
-            if random.randrange(0,6) == 3:
-                # Create New Instance?
-                tenant = random.choice(self.tenants)
-                self.actions.append(self._action(CreateAction, tenant))
-
             free_instances = [x for x in self.instances if not x.busy]
-
-            if free_instances:
-                # Do Random Action?
-                if random.randrange(0,8) == 4:
-                    instance = random.choice(free_instances)
-                    instance.busy = True
-                    action = random.choice(RANDOM_ACTIONS)
-                    free_instances.remove(instance)
-                    self._send_exists(instance, end=self.cur_time)
-                    self.actions.append(self._action(action, instance))
-
-            if free_instances:
-                # Delete Random Instance?
-                if random.randrange(0,12) == 6:
-                    instance = random.choice(free_instances)
-                    instance.busy = True
-                    free_instances.remove(instance)
-                    self.actions.append(self._action(DeleteAction, instance))
+            self._do_actions(free_instances)
 
             for action in self.actions:
                 # Tick Actions
@@ -409,7 +441,7 @@ class Compute(object):
 
             stats = (len(self.tenants), len(self.instances),
                      len(self.deleted_instances), len(self.actions))
-            #print "T: %s, I: %s, D: %s, A: %s" % stats
+            print "T: %s, I: %s, D: %s, A: %s" % stats
 
             self.cur_time += self.tick_length
-            #time.sleep(self.sleep_time)
+            time.sleep(self.sleep_time)
