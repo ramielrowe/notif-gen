@@ -99,7 +99,7 @@ CENTOS_IMAGE_META = {
     'base_image_ref': 'e0ed4adb-3a00-433e-a0ac-a51f1bc1ea3d',
     'cache_in_nova': 'True',
     'com.rackspace__1__options': '0',
-    'com.rackspace__1__release_build_date': u'2013-06-25_18-02-54',
+    'com.rackspace__1__release_build_date': '2013-06-25_18-02-54',
     'com.rackspace__1__release_id': '213',
     'com.rackspace__1__release_version': '2',
     'com.rackspace__1__source': 'kickstart',
