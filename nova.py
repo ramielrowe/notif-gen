@@ -74,6 +74,69 @@ BASE_NOTIFICATION = {
     'timestamp': '2013-07-09 16:10:17.542449'}
 
 
+WINDOWS_IMAGE_META = {
+    'auto_disk_config': 'False',
+    'base_image_ref': 'fc2448b4-da85-4893-b0e7-6c8794e608b4',
+    'cache_in_nova': '1',
+    'com.rackspace__1__options': '4',
+    'com.rackspace__1__release_build_date': '2013-04-17',
+    'com.rackspace__1__release_id': '4100',
+    'com.rackspace__1__release_version': '3',
+    'com.rackspace__1__source': 'kickstart',
+    'com.rackspace__1__visible_core': '1',
+    'com.rackspace__1__visible_managed': '1',
+    'com.rackspace__1__visible_rackconnect': '1',
+    'image_type': 'base',
+    'org.openstack__1__architecture': 'x64',
+    'org.openstack__1__os_distro': 'com.microsoft.server',
+    'org.openstack__1__os_version': '2012.0',
+    'os_type': 'windows',
+    'rax_activation_profile': 'windows'
+}
+
+CENTOS_IMAGE_META = {
+    'auto_disk_config': 'True',
+    'base_image_ref': 'e0ed4adb-3a00-433e-a0ac-a51f1bc1ea3d',
+    'cache_in_nova': 'True',
+    'com.rackspace__1__options': '0',
+    'com.rackspace__1__release_build_date': u'2013-06-25_18-02-54',
+    'com.rackspace__1__release_id': '213',
+    'com.rackspace__1__release_version': '2',
+    'com.rackspace__1__source': 'kickstart',
+    'com.rackspace__1__visible_core': '1',
+    'com.rackspace__1__visible_managed': '1',
+    'com.rackspace__1__visible_rackconnect': '1',
+    'image_type': 'base',
+    'org.openstack__1__architecture': 'x64',
+    'org.openstack__1__os_distro': 'org.centos',
+    'org.openstack__1__os_version': '6.4',
+    'os_distro': 'centos',
+    'os_type': 'linux'
+}
+
+UBUNTU_IMAGE_META = {
+    'auto_disk_config': 'True',
+    'cache_in_nova': 'True',
+    'com.rackspace__1__options': '0',
+    'com.rackspace__1__release_build_date': '2013-07-12_15-00-29',
+    'com.rackspace__1__release_id': '1000',
+    'com.rackspace__1__release_version': '4',
+    'com.rackspace__1__source': 'kickstart',
+    'com.rackspace__1__visible_core': '1',
+    'com.rackspace__1__visible_managed': '1',
+    'com.rackspace__1__visible_rackconnect': '1',
+    'image_type': 'base',
+    'org.openstack__1__architecture': 'x64',
+    'org.openstack__1__os_distro': 'com.ubuntu',
+    'org.openstack__1__os_version': '10.04',
+    'os_distro': 'ubuntu',
+    'os_type': 'linux'
+}
+
+POSSIBLE_IMAGE_META = [WINDOWS_IMAGE_META, CENTOS_IMAGE_META,
+                       UBUNTU_IMAGE_META]
+
+
 def uuid4():
     return str(uuid.uuid4())
 
@@ -86,6 +149,7 @@ class Instance(object):
         if not name:
             name = "instance-%s" % uuid
         self.name = name
+        self.image_meta = random.choice(POSSIBLE_IMAGE_META)
 
         self.tenant = tenant
         self.type = instance_type
@@ -121,6 +185,7 @@ class Instance(object):
         payload['created_at'] = str(self.created_at)
         payload['launched_at'] = str(self.launched_at)
         payload['deleted_at'] = str(self.deleted_at)
+        payload['image_meta'].update(self.image_meta)
 
         return notif
 
@@ -201,6 +266,7 @@ class RebuildAction(InstanceAction):
 
     def _rebuild_end(self, cur_time):
         self.instance.launched_at = cur_time
+        self.instance.image_meta = random.choice(POSSIBLE_IMAGE_META)
         notif = self.instance.to_notification(cur_time,
                                               'compute.instance.rebuild.end',
                                               self.request_id)
