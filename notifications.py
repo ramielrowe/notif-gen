@@ -8,6 +8,7 @@ import kombu.common
 import kombu.entity
 import kombu.pools
 import MySQLdb
+import pymongo
 
 KEY_SEP = '.'
 LIST_IDENT = '*'
@@ -109,6 +110,27 @@ class MySQLNotifier(object):
         body = deepcopy(notif)
         return self._dict_to_entries(notif['message_id'], '', '', body)
 
+
+class MongoNotifier(object):
+    def __init__(self):
+        client = pymongo.MongoClient('primary.mongo.ramielrowe.com', 27017)
+        db = client.test
+        self.col = db.test2
+        self.times = []
+        self.last_avg_time = datetime.datetime.utcnow()
+
+    def notify(self, notif):
+        start = datetime.datetime.utcnow()
+        self.col.insert(notif)
+        end = datetime.datetime.utcnow()
+        delta = end-start
+        self.times.append(delta)
+        if end > self.last_avg_time + datetime.timedelta(seconds=10):
+            self.last_avg_time = end
+            print "%s - %s" % (len(self.times),reduce(operator.add, self.times)/len(self.times))
+            self.times = []
+
+
 class AMQPNotifier(object):
 
     def __init__(self):
@@ -135,6 +157,7 @@ class AMQPNotifier(object):
     def notify(self, notif):
         self._send_notification(notif, 'monitor_test.info')
 
+
 class PrintNotifier(object):
     count = 0
     def notify(self, notif):
@@ -142,6 +165,6 @@ class PrintNotifier(object):
         print "%s - %s - %s" % (self.count, notif['event_type'], notif['payload']['instance_id'])
 
 
-class DoNothingNotifier(object):
+class NoOpNotifier(object):
     def notify(self, notif):
         pass

@@ -4,7 +4,7 @@ import nova
 
 start = datetime.datetime.utcnow()
 tick_time = datetime.timedelta(minutes=1)
-compute = nova.Compute(start, tick_time, .02,
+compute = nova.Compute(start, tick_time, 0.00,
                        initial_tenants=30, initial_instances=200,
                        active_actions_target=25)
 compute.run()

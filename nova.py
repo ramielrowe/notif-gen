@@ -78,18 +78,18 @@ WINDOWS_IMAGE_META = {
     'auto_disk_config': 'False',
     'base_image_ref': 'fc2448b4-da85-4893-b0e7-6c8794e608b4',
     'cache_in_nova': '1',
-    'com.rackspace__1__options': '4',
-    'com.rackspace__1__release_build_date': '2013-04-17',
-    'com.rackspace__1__release_id': '4100',
-    'com.rackspace__1__release_version': '3',
-    'com.rackspace__1__source': 'kickstart',
-    'com.rackspace__1__visible_core': '1',
-    'com.rackspace__1__visible_managed': '1',
-    'com.rackspace__1__visible_rackconnect': '1',
+    'com_rackspace__1__options': '4',
+    'com_rackspace__1__release_build_date': '2013-04-17',
+    'com_rackspace__1__release_id': '4100',
+    'com_rackspace__1__release_version': '3',
+    'com_rackspace__1__source': 'kickstart',
+    'com_rackspace__1__visible_core': '1',
+    'com_rackspace__1__visible_managed': '1',
+    'com_rackspace__1__visible_rackconnect': '1',
     'image_type': 'base',
-    'org.openstack__1__architecture': 'x64',
-    'org.openstack__1__os_distro': 'com.microsoft.server',
-    'org.openstack__1__os_version': '2012.0',
+    'org_openstack__1__architecture': 'x64',
+    'org_openstack__1__os_distro': 'com.microsoft.server',
+    'org_openstack__1__os_version': '2012.0',
     'os_type': 'windows',
     'rax_activation_profile': 'windows'
 }
@@ -98,18 +98,18 @@ CENTOS_IMAGE_META = {
     'auto_disk_config': 'True',
     'base_image_ref': 'e0ed4adb-3a00-433e-a0ac-a51f1bc1ea3d',
     'cache_in_nova': 'True',
-    'com.rackspace__1__options': '0',
-    'com.rackspace__1__release_build_date': '2013-06-25_18-02-54',
-    'com.rackspace__1__release_id': '213',
-    'com.rackspace__1__release_version': '2',
-    'com.rackspace__1__source': 'kickstart',
-    'com.rackspace__1__visible_core': '1',
-    'com.rackspace__1__visible_managed': '1',
-    'com.rackspace__1__visible_rackconnect': '1',
+    'com_rackspace__1__options': '0',
+    'com_rackspace__1__release_build_date': '2013-06-25_18-02-54',
+    'com_rackspace__1__release_id': '213',
+    'com_rackspace__1__release_version': '2',
+    'com_rackspace__1__source': 'kickstart',
+    'com_rackspace__1__visible_core': '1',
+    'com_rackspace__1__visible_managed': '1',
+    'com_rackspace__1__visible_rackconnect': '1',
     'image_type': 'base',
-    'org.openstack__1__architecture': 'x64',
-    'org.openstack__1__os_distro': 'org.centos',
-    'org.openstack__1__os_version': '6.4',
+    'org_openstack__1__architecture': 'x64',
+    'org_openstack__1__os_distro': 'org.centos',
+    'org_openstack__1__os_version': '6.4',
     'os_distro': 'centos',
     'os_type': 'linux'
 }
@@ -117,18 +117,18 @@ CENTOS_IMAGE_META = {
 UBUNTU_IMAGE_META = {
     'auto_disk_config': 'True',
     'cache_in_nova': 'True',
-    'com.rackspace__1__options': '0',
-    'com.rackspace__1__release_build_date': '2013-07-12_15-00-29',
-    'com.rackspace__1__release_id': '1000',
-    'com.rackspace__1__release_version': '4',
-    'com.rackspace__1__source': 'kickstart',
-    'com.rackspace__1__visible_core': '1',
-    'com.rackspace__1__visible_managed': '1',
-    'com.rackspace__1__visible_rackconnect': '1',
+    'com_rackspace__1__options': '0',
+    'com_rackspace__1__release_build_date': '2013-07-12_15-00-29',
+    'com_rackspace__1__release_id': '1000',
+    'com_rackspace__1__release_version': '4',
+    'com_rackspace__1__source': 'kickstart',
+    'com_rackspace__1__visible_core': '1',
+    'com_rackspace__1__visible_managed': '1',
+    'com_rackspace__1__visible_rackconnect': '1',
     'image_type': 'base',
-    'org.openstack__1__architecture': 'x64',
-    'org.openstack__1__os_distro': 'com.ubuntu',
-    'org.openstack__1__os_version': '10.04',
+    'org_openstack__1__architecture': 'x64',
+    'org_openstack__1__os_distro': 'com.ubuntu',
+    'org_openstack__1__os_version': '10.04',
     'os_distro': 'ubuntu',
     'os_type': 'linux'
 }
@@ -278,7 +278,7 @@ class ResizeAction(InstanceAction):
         super(ResizeAction, self).__init__(notifier, cur_time)
         self.notifier = notifier
         self.instance = instance
-        self.type_id = random.randrange(1,8)
+        self.type_id = random.randrange(1, 8)
         self.steps = [
             (datetime.timedelta(minutes=0), self._resize_prep_start),
             (datetime.timedelta(minutes=random.randrange(1, 3)), self._resize_prep_end),
@@ -374,7 +374,7 @@ class Compute(object):
                  initial_tenants=0,
                  initial_instances=0,
                  active_actions_target=10):
-        self.notifier = notifications.PrintNotifier()
+        self.notifier = notifications.MongoNotifier()
         self.start_time = start_time
         self.cur_time = start_time
         self.sleep_time = sleep_time
@@ -507,7 +507,7 @@ class Compute(object):
 
             stats = (len(self.tenants), len(self.instances),
                      len(self.deleted_instances), len(self.actions))
-            print "T: %s, I: %s, D: %s, A: %s" % stats
+            #print "T: %s, I: %s, D: %s, A: %s" % stats
 
             self.cur_time += self.tick_length
-            time.sleep(self.sleep_time)
+            #time.sleep(self.sleep_time)
