@@ -373,8 +373,9 @@ class Compute(object):
     def __init__(self, start_time, tick_length, sleep_time,
                  initial_tenants=0,
                  initial_instances=0,
-                 active_actions_target=10):
-        self.notifier = notifications.MongoNotifier()
+                 active_actions_target=10,
+                 notifier=None):
+        self.notifier = notifier or notifications.PrintNotifier
         self.start_time = start_time
         self.cur_time = start_time
         self.sleep_time = sleep_time

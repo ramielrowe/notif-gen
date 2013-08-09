@@ -1,6 +1,6 @@
 from copy import deepcopy
 import datetime
-import json
+import logging
 import operator
 import re
 
@@ -16,6 +16,8 @@ SPECIAL_KEY_CHARS = [KEY_SEP, LIST_IDENT]
 SPECIAL_RE = {}
 for char in SPECIAL_KEY_CHARS:
     SPECIAL_RE[char] = re.compile(r'(?<!\\)[%s]' % char)
+
+logging.basicConfig(filename='notif_stats.log', level=logging.DEBUG)
 
 
 def _escape_specials(s):
@@ -35,10 +37,12 @@ MySQL_INSERT = "INSERT INTO `notifications` SET `message_id` = '%(message_id)s',
 class MySQLNotifier(object):
     def __init__(self):
         self.con = MySQLdb.connect('localhost', 'root', 'password', 'notif_test')
+        self.total_count = 0
         self.times = []
         self.last_avg_time = datetime.datetime.utcnow()
 
     def notify(self, notif):
+        self.times += 1
         start = datetime.datetime.utcnow()
         with self.con:
             cur = self.con.cursor()
@@ -49,7 +53,10 @@ class MySQLNotifier(object):
         self.times.append(delta)
         if end > self.last_avg_time + datetime.timedelta(seconds=10):
             self.last_avg_time = end
-            print "%s - %s" % (len(self.times),reduce(operator.add, self.times)/len(self.times))
+            vals = (self.total_count, len(self.times),
+                    reduce(operator.add, self.times)/len(self.times))
+            msg = "%s - %s - %s" % vals
+            logging.info(msg)
             self.times = []
 
     def _list_to_entries(self, event, loc, index, a_list):
@@ -112,8 +119,11 @@ class MySQLNotifier(object):
 
 
 class MongoNotifier(object):
-    def __init__(self):
-        client = pymongo.MongoClient('primary.mongo.ramielrowe.com', 27017)
+    def __init__(self, host=None, port=None, replicaset=None):
+        kwargs = {}
+        if replicaset:
+            kwargs['replicaset'] = replicaset
+        client = pymongo.MongoClient(host, port, **kwargs)
         db = client.test
         self.col = db.test2
         self.times = []
@@ -126,8 +136,13 @@ class MongoNotifier(object):
         delta = end-start
         self.times.append(delta)
         if end > self.last_avg_time + datetime.timedelta(seconds=10):
+            size = self.col.count()
             self.last_avg_time = end
-            print "%s - %s" % (len(self.times),reduce(operator.add, self.times)/len(self.times))
+            vals = (str(datetime.datetime.utcnow()),
+                    size, len(self.times),
+                    reduce(operator.add, self.times)/len(self.times))
+            msg = "%s - %s - %s - %s" % vals
+            logging.info(msg)
             self.times = []
 
 
