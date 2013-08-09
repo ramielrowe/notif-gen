@@ -132,7 +132,20 @@ class MongoNotifier(object):
         self.times = []
         self.last_avg_time = datetime.datetime.utcnow()
 
+    def _str_to_dt(self, datestr):
+        dt = None
+        try:
+            dt = datetime.datetime.strptime(datestr, "%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            try:
+                dt = datetime.datetime.strptime(datestr, "%Y-%m-%d %H:%M:%S")
+            except Exception, e:
+                print "BAD DATE: ", e
+        return dt
+
     def notify(self, notif):
+        timestr = notif['_context_timestamp']
+        notif['_context_timestamp'] = self._str_to_dt(timestr)
         start = datetime.datetime.utcnow()
         self.col.insert(notif)
         end = datetime.datetime.utcnow()
