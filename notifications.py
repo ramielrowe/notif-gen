@@ -127,7 +127,7 @@ class MongoNotifier(object):
             client = pymongo_replica.MongoReplicaSetClient(*args, **kwargs)
         else:
             client = pymongo.MongoClient(host, port)
-        db = client.test
+        db = client.ceilometer
         self.col = db.notifications
         self.times = []
         self.last_avg_time = datetime.datetime.utcnow()
