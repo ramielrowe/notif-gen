@@ -9,6 +9,7 @@ import kombu.entity
 import kombu.pools
 import MySQLdb
 import pymongo
+import pymongo.mongo_replica_set_client as pymongo_replica
 
 KEY_SEP = '.'
 LIST_IDENT = '*'
@@ -120,12 +121,14 @@ class MySQLNotifier(object):
 
 class MongoNotifier(object):
     def __init__(self, host=None, port=None, replicaset=None):
-        kwargs = {}
         if replicaset:
-            kwargs['replicaset'] = replicaset
-        client = pymongo.MongoClient(host, port, **kwargs)
+            args = (host, port)
+            kwargs = {'replicaset': replicaset}
+            client = pymongo_replica.MongoReplicaSetClient(*args, **kwargs)
+        else:
+            client = pymongo.MongoClient(host, port)
         db = client.test
-        self.col = db.test2
+        self.col = db.notifications
         self.times = []
         self.last_avg_time = datetime.datetime.utcnow()
 
